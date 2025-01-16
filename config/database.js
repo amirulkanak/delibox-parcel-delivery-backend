@@ -12,7 +12,7 @@ const dbName = process.env.MONGODB_DB;
 
 let client;
 
-const connectDB = async () => {
+const connectDB = async (dbCollection) => {
   if (!client) {
     client = new MongoClient(uri, {
       serverApi: {
@@ -22,7 +22,7 @@ const connectDB = async () => {
       },
     });
   }
-  return client.db(dbName);
+  return client.db(dbName).collection(dbCollection);
 };
 
 export default connectDB;

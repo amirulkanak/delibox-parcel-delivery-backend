@@ -4,6 +4,7 @@ import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import morgan from 'morgan';
 import connectDB from './config/database.js';
+import { ObjectId } from 'mongodb';
 
 // Load environment variables
 dotenv.config();
@@ -17,9 +18,6 @@ const allowedOrigins = process.env.FRONTEND_URLS.split(',');
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(morgan('dev'));
-
-// Connect to database
-connectDB();
 
 // Routes
 // JWT Auth routes
@@ -45,6 +43,27 @@ const verifyToken = (req, res, next) => {
     next();
   });
 };
+
+// User routes
+const userCollection = 'users';
+// Register new user
+app.post('/users/:email', async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  const user = req.body;
+  // Check if user exists
+  const db = await connectDB(userCollection);
+  const isUserExist = await db.findOne(query);
+  if (isUserExist) return res.send({ role: isUserExist.role });
+  // if user does not exist, create a new user
+  const result = await db.insertOne({
+    ...user,
+    role: 'customer',
+    timestamp: new Date(),
+  });
+  const newUser = await db.findOne({ _id: new ObjectId(result.insertedId) });
+  res.send({ role: newUser.role });
+});
 
 // Default route
 app.get('/', (req, res) => {
