@@ -22,8 +22,9 @@ app.use(morgan('dev'));
 // Routes
 // JWT Auth routes
 app.post('/jwt/create', async (req, res) => {
-  const { email } = req.body;
-  const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+  const email = req.body;
+  console.log(email);
+  const token = jwt.sign(email, process.env.JWT_SECRET, {
     expiresIn: '3h',
   });
   res.send({ token });
@@ -36,10 +37,11 @@ const verifyToken = (req, res, next) => {
     return res.status(401).send('Unauthorized');
   }
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if ((err, decoded)) {
+    if (err) {
+      console.log(err);
       return res.status(401).send('Unauthorized');
     }
-    req.user = decoded;
+    req.decoded = decoded;
     next();
   });
 };
@@ -54,15 +56,28 @@ app.post('/users/:email', async (req, res) => {
   // Check if user exists
   const db = await connectDB(userCollection);
   const isUserExist = await db.findOne(query);
-  if (isUserExist) return res.send({ role: isUserExist.role });
+  if (isUserExist) return res.send({ message: 'User already exists' });
   // if user does not exist, create a new user
   const result = await db.insertOne({
     ...user,
-    role: 'customer',
+    role: 'user',
     timestamp: new Date(),
   });
-  const newUser = await db.findOne({ _id: new ObjectId(result.insertedId) });
-  res.send({ role: newUser.role });
+  res.send(result);
+});
+
+// get user role by email
+app.get('/users/role/:email', verifyToken, async (req, res) => {
+  const tokenEmail = req.decoded.email;
+  if (tokenEmail !== req.params.email) {
+    return res.status(401).send('Unauthorized');
+  }
+  const email = req.params.email;
+  const query = { email: email };
+  const db = await connectDB(userCollection);
+  const user = await db.findOne(query);
+  if (!user) return res.status(404).send('User not found');
+  res.send({ role: user.role });
 });
 
 // Default route
