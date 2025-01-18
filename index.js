@@ -132,6 +132,29 @@ app.get('/bookedParcel/:id', verifyToken, async (req, res) => {
   res.send(result);
 });
 
+// Update booked parcel by id
+app.patch('/bookedParcel/update/:id', verifyToken, async (req, res) => {
+  const db = await connectDB(bookedParcelCollection);
+  const parcel = req.body;
+  const query = { _id: new ObjectId(req.params.id) };
+  const update = {
+    $set: {
+      'user.phone': parcel.phoneNumber,
+      'parcelDetails.parcelType': parcel.parcelType,
+      'parcelDetails.parcelWeight': parcel.parcelWeight,
+      'receiverDetails.name': parcel.receiverName,
+      'receiverDetails.phone': parcel.receiverPhoneNumber,
+      'receiverDetails.address': parcel.deliveryAddress,
+      'receiverDetails.latitude': parcel.latitude,
+      'receiverDetails.longitude': parcel.longitude,
+      price: parcel.price,
+      deliveryDate: parcel.deliveryDate,
+    },
+  };
+  const result = await db.updateOne(query, update);
+  res.send(result);
+});
+
 // Default route
 app.get('/', (req, res) => {
   res.send('Welcome to the API - developed by github/amirulkanak');
