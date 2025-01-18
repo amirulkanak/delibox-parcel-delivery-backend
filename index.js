@@ -90,8 +90,28 @@ app.post('/bookedParcel/add/:email', verifyToken, async (req, res) => {
   const parcel = req.body;
   const db = await connectDB(bookedParcelCollection);
   const result = await db.insertOne({
-    ...parcel,
-    timestamp: new Date(),
+    user: {
+      email: parcel.email,
+      name: parcel.name,
+      phone: parcel.phoneNumber,
+    },
+    parcelDetails: {
+      parcelType: parcel.parcelType,
+      parcelWeight: parcel.parcelWeight,
+    },
+    receiverDetails: {
+      name: parcel.receiverName,
+      phone: parcel.receiverPhoneNumber,
+      address: parcel.deliveryAddress,
+      latitude: parcel.latitude,
+      longitude: parcel.longitude,
+    },
+    price: parcel.price,
+    status: 'pending',
+    deliveryDate: parcel.deliveryDate,
+    approximateDeliveryDate: 'Not Assigned',
+    deliveryMenID: 'Not Assigned',
+    bookedDate: new Date(),
   });
   res.send(result);
 });
