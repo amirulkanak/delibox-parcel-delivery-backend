@@ -23,7 +23,6 @@ app.use(morgan('dev'));
 // JWT Auth routes
 app.post('/jwt/create', async (req, res) => {
   const email = req.body;
-  console.log(email);
   const token = jwt.sign(email, process.env.JWT_SECRET, {
     expiresIn: '3h',
   });
@@ -78,6 +77,23 @@ app.get('/users/role/:email', verifyToken, async (req, res) => {
   const user = await db.findOne(query);
   if (!user) return res.status(404).send('User not found');
   res.send({ role: user.role });
+});
+
+// Book Parcel routes
+const bookedParcelCollection = 'bookedParcel';
+// Book a parcel
+app.post('/bookedParcel/add/:email', verifyToken, async (req, res) => {
+  const email = req.decoded.email;
+  if (email !== req.params.email) {
+    return res.status(401).send('Unauthorized');
+  }
+  const parcel = req.body;
+  const db = await connectDB(bookedParcelCollection);
+  const result = await db.insertOne({
+    ...parcel,
+    timestamp: new Date(),
+  });
+  res.send(result);
 });
 
 // Default route
