@@ -109,8 +109,8 @@ app.post('/bookedParcel/add/:email', verifyToken, async (req, res) => {
     price: parcel.price,
     status: 'pending',
     deliveryDate: parcel.deliveryDate,
-    approximateDeliveryDate: 'Not Assigned',
-    deliveryMenID: 'Not Assigned',
+    approximateDeliveryDate: 'processing',
+    deliveryMenID: 'processing',
     bookedDate: new Date(),
   });
   res.send(result);
@@ -120,6 +120,15 @@ app.post('/bookedParcel/add/:email', verifyToken, async (req, res) => {
 app.get('/bookedParcel/all', verifyToken, async (req, res) => {
   const db = await connectDB(bookedParcelCollection);
   const result = await db.find().toArray();
+  res.send(result);
+});
+
+// Get booked parcel by id
+app.get('/bookedParcel/:id', verifyToken, async (req, res) => {
+  const db = await connectDB(bookedParcelCollection);
+  const query = { _id: new ObjectId(req.params.id) };
+  const result = await db.findOne(query);
+  if (!result) return res.status(404).send('Parcel not found');
   res.send(result);
 });
 
