@@ -116,6 +116,13 @@ app.post('/bookedParcel/add/:email', verifyToken, async (req, res) => {
   res.send(result);
 });
 
+// Get all booked parcels
+app.get('/bookedParcel/all', verifyToken, async (req, res) => {
+  const db = await connectDB(bookedParcelCollection);
+  const result = await db.find().toArray();
+  res.send(result);
+});
+
 // Default route
 app.get('/', (req, res) => {
   res.send('Welcome to the API - developed by github/amirulkanak');
