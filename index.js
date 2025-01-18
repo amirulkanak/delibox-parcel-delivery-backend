@@ -155,6 +155,19 @@ app.patch('/bookedParcel/update/:id', verifyToken, async (req, res) => {
   res.send(result);
 });
 
+// Cancel booked parcel by id
+app.patch('/bookedParcel/cancel/:id', verifyToken, async (req, res) => {
+  const db = await connectDB(bookedParcelCollection);
+  const query = { _id: new ObjectId(req.params.id) };
+  const update = {
+    $set: {
+      status: 'cancelled',
+    },
+  };
+  const result = await db.updateOne(query, update);
+  res.send(result);
+});
+
 // Default route
 app.get('/', (req, res) => {
   res.send('Welcome to the API - developed by github/amirulkanak');
