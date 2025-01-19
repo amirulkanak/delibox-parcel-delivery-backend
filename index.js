@@ -23,6 +23,23 @@ app.use(morgan('dev'));
 const userCollection = 'users';
 const bookedParcelCollection = 'bookedParcel';
 
+// increase or decrease booked parcel count and total spent by $inc
+const updateBookedParcelCount = async (email, count, totalSpent, operation) => {
+  const db = await connectDB(userCollection);
+  const sign = operation === 'increase' ? 1 : -1;
+  const updatedCount = count * sign;
+  const updatedTotalSpent = totalSpent * sign;
+  await db.updateOne(
+    { email: email },
+    {
+      $inc: {
+        bookedParcel: updatedCount,
+        totalSpent: updatedTotalSpent,
+      },
+    }
+  );
+};
+
 // Routes
 // JWT Auth routes
 app.post('/jwt/create', async (req, res) => {
@@ -117,6 +134,7 @@ app.post('/bookedParcel/add/:email', verifyToken, async (req, res) => {
     return res.status(401).send('Unauthorized');
   }
   const parcel = req.body;
+  updateBookedParcelCount(email, 1, parcel.price, 'increase');
   const db = await connectDB(bookedParcelCollection);
   const result = await db.insertOne({
     user: {
@@ -188,6 +206,10 @@ app.patch('/bookedParcel/update/:id', verifyToken, async (req, res) => {
 app.patch('/bookedParcel/cancel/:id', verifyToken, async (req, res) => {
   const db = await connectDB(bookedParcelCollection);
   const query = { _id: new ObjectId(req.params.id) };
+  const bookedParcel = await db.findOne(query);
+  const email = bookedParcel.user.email;
+  const price = bookedParcel.price;
+  updateBookedParcelCount(email, 1, price, 'decrease');
   const update = {
     $set: {
       status: 'cancelled',
