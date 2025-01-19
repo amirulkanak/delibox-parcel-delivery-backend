@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import express from 'express';
+import express, { query } from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import morgan from 'morgan';
@@ -57,10 +57,14 @@ app.post('/users/:email', async (req, res) => {
   const isUserExist = await db.findOne(query);
   if (isUserExist) return res.send({ message: 'User already exists' });
   // if user does not exist, create a new user
+  console.log(user);
   const result = await db.insertOne({
     ...user,
+    phone: 'not available',
     role: 'user',
-    timestamp: new Date(),
+    bookedParcel: 0,
+    totalSpent: 0,
+    createdAt: new Date(),
   });
   res.send(result);
 });
@@ -77,6 +81,15 @@ app.get('/users/role/:email', verifyToken, async (req, res) => {
   const user = await db.findOne(query);
   if (!user) return res.status(404).send('User not found');
   res.send({ role: user.role });
+});
+
+// get all users
+app.get('/users/all', verifyToken, async (req, res) => {
+  const currentUserEmail = req.decoded.email;
+  const query = { email: { $ne: currentUserEmail } };
+  const db = await connectDB(userCollection);
+  const result = await db.find(query).toArray();
+  res.send(result);
 });
 
 // Book Parcel routes
