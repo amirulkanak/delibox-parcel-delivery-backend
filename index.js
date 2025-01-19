@@ -19,6 +19,10 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Collections
+const userCollection = 'users';
+const bookedParcelCollection = 'bookedParcel';
+
 // Routes
 // JWT Auth routes
 app.post('/jwt/create', async (req, res) => {
@@ -46,7 +50,6 @@ const verifyToken = (req, res, next) => {
 };
 
 // User routes
-const userCollection = 'users';
 // Register new user
 app.post('/users/:email', async (req, res) => {
   const email = req.params.email;
@@ -92,8 +95,21 @@ app.get('/users/all', verifyToken, async (req, res) => {
   res.send(result);
 });
 
+// update user role by id
+app.patch('/users/update/role/:id', verifyToken, async (req, res) => {
+  const db = await connectDB(userCollection);
+  const user = req.body;
+  const query = { _id: new ObjectId(req.params.id) };
+  const update = {
+    $set: {
+      role: user.role,
+    },
+  };
+  const result = await db.updateOne(query, update);
+  res.send(result);
+});
+
 // Book Parcel routes
-const bookedParcelCollection = 'bookedParcel';
 // Book a parcel
 app.post('/bookedParcel/add/:email', verifyToken, async (req, res) => {
   const email = req.decoded.email;
