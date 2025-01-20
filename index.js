@@ -260,6 +260,25 @@ app.patch('/bookedParcel/cancel/:id', verifyToken, async (req, res) => {
   res.send(result);
 });
 
+// deliver booked parcel by id
+app.patch('/bookedParcel/deliver/:id', verifyToken, async (req, res) => {
+  const deliveryManID = req.body.userId;
+  const userDB = await connectDB(userCollection);
+  await userDB.updateOne(
+    { _id: new ObjectId(deliveryManID) },
+    { $inc: { deliveredParcel: 1 } }
+  );
+  const db = await connectDB(bookedParcelCollection);
+  const query = { _id: new ObjectId(req.params.id) };
+  const update = {
+    $set: {
+      status: 'delivered',
+    },
+  };
+  const result = await db.updateOne(query, update);
+  res.send(result);
+});
+
 // get selected parcel field from all parcels
 app.get('/bookedParcel/admin/all', verifyToken, async (req, res) => {
   const db = await connectDB(bookedParcelCollection);
