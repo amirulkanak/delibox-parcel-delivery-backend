@@ -100,13 +100,20 @@ app.get('/users/role/:email', verifyToken, async (req, res) => {
   const db = await connectDB(userCollection);
   const user = await db.findOne(query);
   if (!user) return res.status(404).send('User not found');
-  res.send({ role: user.role });
+  res.send({ userId: user._id, role: user.role });
 });
 
-// get all users
-app.get('/users/all', verifyToken, async (req, res) => {
-  const currentUserEmail = req.decoded.email;
-  const query = { email: { $ne: currentUserEmail } };
+// get all users data with role user
+app.get('/users/user/all', verifyToken, async (req, res) => {
+  const query = { role: 'user' };
+  const db = await connectDB(userCollection);
+  const result = await db.find(query).toArray();
+  res.send(result);
+});
+
+// get all users data with role deliveryMan
+app.get('/users/delivery-man/all', verifyToken, async (req, res) => {
+  const query = { role: 'deliveryMan' };
   const db = await connectDB(userCollection);
   const result = await db.find(query).toArray();
   res.send(result);
@@ -220,6 +227,22 @@ app.patch('/bookedParcel/update/:id', verifyToken, async (req, res) => {
   res.send(result);
 });
 
+// update booked parcel status,deliveryMenID, approximateDeliveryDate by id
+app.patch('/bookedParcel/assign/:id', verifyToken, async (req, res) => {
+  const db = await connectDB(bookedParcelCollection);
+  const parcel = req.body;
+  const query = { _id: new ObjectId(req.params.id) };
+  const update = {
+    $set: {
+      status: parcel.status,
+      deliveryMenID: parcel.deliveryManID,
+      approximateDeliveryDate: new Date(parcel.approximateDeliveryDate),
+    },
+  };
+  const result = await db.updateOne(query, update);
+  res.send(result);
+});
+
 // Cancel booked parcel by id
 app.patch('/bookedParcel/cancel/:id', verifyToken, async (req, res) => {
   const db = await connectDB(bookedParcelCollection);
@@ -250,6 +273,14 @@ app.get('/bookedParcel/admin/all', verifyToken, async (req, res) => {
     status: 1,
   };
   const result = await db.find().project(field).toArray();
+  res.send(result);
+});
+
+// get all booked parcels by deliveryManID
+app.get('/bookedParcel/deliveryMan/:id', verifyToken, async (req, res) => {
+  const db = await connectDB(bookedParcelCollection);
+  const query = { deliveryMenID: req.params.id };
+  const result = await db.find(query).toArray();
   res.send(result);
 });
 
