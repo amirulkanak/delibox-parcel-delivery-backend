@@ -126,6 +126,15 @@ app.patch('/users/update/role/:id', verifyToken, async (req, res) => {
   res.send(result);
 });
 
+// get all user field data with role deliveryMan
+app.get('/users/deliveryMan', verifyToken, async (req, res) => {
+  const db = await connectDB(userCollection);
+  const query = { role: 'deliveryMan' };
+  const field = { _id: 1, name: 1 };
+  const result = await db.find(query).project(field).toArray();
+  res.send(result);
+});
+
 // Book Parcel routes
 // Book a parcel
 app.post('/bookedParcel/add/:email', verifyToken, async (req, res) => {
@@ -134,7 +143,14 @@ app.post('/bookedParcel/add/:email', verifyToken, async (req, res) => {
     return res.status(401).send('Unauthorized');
   }
   const parcel = req.body;
+  // update booked parcel count and total spent
   updateBookedParcelCount(email, 1, parcel.price, 'increase');
+  // update user phone number
+  const userDB = await connectDB(userCollection);
+  await userDB.updateOne(
+    { email: email },
+    { $set: { phone: parcel.phoneNumber } }
+  );
   const db = await connectDB(bookedParcelCollection);
   const result = await db.insertOne({
     user: {
@@ -155,7 +171,7 @@ app.post('/bookedParcel/add/:email', verifyToken, async (req, res) => {
     },
     price: parcel.price,
     status: 'pending',
-    deliveryDate: parcel.deliveryDate,
+    deliveryDate: new Date(parcel.deliveryDate),
     approximateDeliveryDate: 'processing',
     deliveryMenID: 'processing',
     bookedDate: new Date(),
@@ -163,10 +179,12 @@ app.post('/bookedParcel/add/:email', verifyToken, async (req, res) => {
   res.send(result);
 });
 
-// Get all booked parcels
-app.get('/bookedParcel/all', verifyToken, async (req, res) => {
+// Get all booked parcels by user email
+app.get('/bookedParcel/user-parcels', verifyToken, async (req, res) => {
+  const email = req.decoded.email;
   const db = await connectDB(bookedParcelCollection);
-  const result = await db.find().toArray();
+  const query = { 'user.email': email };
+  const result = await db.find(query).toArray();
   res.send(result);
 });
 
@@ -216,6 +234,22 @@ app.patch('/bookedParcel/cancel/:id', verifyToken, async (req, res) => {
     },
   };
   const result = await db.updateOne(query, update);
+  res.send(result);
+});
+
+// get selected parcel field from all parcels
+app.get('/bookedParcel/admin/all', verifyToken, async (req, res) => {
+  const db = await connectDB(bookedParcelCollection);
+  const field = {
+    _id: 1,
+    'user.name': 1,
+    'user.phone': 1,
+    bookedDate: 1,
+    deliveryDate: 1,
+    price: 1,
+    status: 1,
+  };
+  const result = await db.find().project(field).toArray();
   res.send(result);
 });
 
