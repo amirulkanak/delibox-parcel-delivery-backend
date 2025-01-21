@@ -174,7 +174,51 @@ app.get('/users/deliveryMan', verifyToken, async (req, res) => {
   res.send(result);
 });
 
+// get top 3 deliveryMan
+app.get('/users/top-delivery-man', async (req, res) => {
+  const db = await connectDB(userCollection);
+  const pipeline = [
+    {
+      $match: {
+        role: 'deliveryMan',
+      },
+    },
+    {
+      $project: {
+        name: 1,
+        photo: 1,
+        averageReview: 1,
+        deliveredParcel: 1,
+      },
+    },
+    {
+      $sort: {
+        deliveredParcel: -1,
+      },
+    },
+    {
+      $limit: 3,
+    },
+  ];
+  const result = await db.aggregate(pipeline).toArray();
+  res.send(result);
+});
+
 // Book Parcel routes
+// get total
+app.get('/user-parcel/total', async (req, res) => {
+  const db = await connectDB(bookedParcelCollection);
+  const totalBookedParcel = await db.countDocuments();
+  const totalDeliveredParcel = await db.countDocuments({ status: 'delivered' });
+  const userDB = await connectDB(userCollection);
+  const totalUser = await userDB.countDocuments();
+  const result = {
+    totalBookedParcel,
+    totalDeliveredParcel,
+    totalUser,
+  };
+  res.send(result);
+});
 // Book a parcel
 app.post('/bookedParcel/add/:email', verifyToken, async (req, res) => {
   const email = req.decoded.email;
