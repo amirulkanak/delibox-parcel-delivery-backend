@@ -71,22 +71,33 @@ const verifyToken = (req, res, next) => {
 app.post('/users/:email', async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
-  const user = req.body;
   // Check if user exists
   const db = await connectDB(userCollection);
   const isUserExist = await db.findOne(query);
   if (isUserExist) return res.send({ message: 'User already exists' });
   // if user does not exist, create a new user
-  console.log(user);
-  const result = await db.insertOne({
-    ...user,
-    phone: 'not available',
-    role: 'user',
-    bookedParcel: 0,
-    totalSpent: 0,
-    createdAt: new Date(),
-  });
-  res.send(result);
+  const user = req.body;
+  if (user.role === 'user') {
+    const result = await db.insertOne({
+      ...user,
+      phone: 'not available',
+      role: 'user',
+      bookedParcel: 0,
+      totalSpent: 0,
+      createdAt: new Date(),
+    });
+    return res.send(result);
+  }
+  if (user.role === 'deliveryMan') {
+    const result = await db.insertOne({
+      ...user,
+      role: 'deliveryMan',
+      deliveredParcel: 0,
+      averageReview: 0,
+      createdAt: new Date(),
+    });
+    return res.send(result);
+  }
 });
 
 // get user role by email
