@@ -92,6 +92,7 @@ app.post('/users/:email', async (req, res) => {
   if (user.role === 'deliveryMan') {
     const result = await db.insertOne({
       ...user,
+      phone: 'not available',
       role: 'deliveryMan',
       deliveredParcel: 0,
       averageReview: 0,
@@ -99,6 +100,23 @@ app.post('/users/:email', async (req, res) => {
     });
     return res.send(result);
   }
+});
+
+// update user photo by email
+app.patch('/users/update/photo/:email', verifyToken, async (req, res) => {
+  const email = req.decoded.email;
+  if (email !== req.params.email) {
+    return res.status(401).send('Unauthorized');
+  }
+  const db = await connectDB(userCollection);
+  const query = { email: email };
+  const update = {
+    $set: {
+      photo: req.body.photo,
+    },
+  };
+  const result = await db.updateOne(query, update);
+  res.send(result);
 });
 
 // get user role by email
@@ -139,6 +157,8 @@ app.patch('/users/update/role/:id', verifyToken, async (req, res) => {
   const update = {
     $set: {
       role: user.role,
+      averageReview: 0,
+      deliveredParcel: 0,
     },
   };
   const result = await db.updateOne(query, update);
@@ -312,6 +332,40 @@ app.get('/bookedParcel/deliveryMan/:id', verifyToken, async (req, res) => {
   const db = await connectDB(bookedParcelCollection);
   const query = { deliveryMenID: req.params.id };
   const result = await db.find(query).toArray();
+  res.send(result);
+});
+
+// get date wise total booked parcel
+app.get('/bookedParcel/admin/date-wise', verifyToken, async (req, res) => {
+  const db = await connectDB(bookedParcelCollection);
+  const pipeline = [
+    {
+      $group: {
+        _id: {
+          $dateToString: {
+            format: '%d-%m-%Y',
+            date: '$bookedDate',
+          },
+        },
+        bookedParcel: {
+          $sum: 1,
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        date: '$_id',
+        bookedParcel: 1,
+      },
+    },
+    {
+      $sort: {
+        date: 1,
+      },
+    },
+  ];
+  const result = await db.aggregate(pipeline).toArray();
   res.send(result);
 });
 
