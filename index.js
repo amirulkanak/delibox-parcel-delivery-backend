@@ -22,6 +22,7 @@ app.use(morgan('dev'));
 // Collections
 const userCollection = 'users';
 const bookedParcelCollection = 'bookedParcel';
+const reviewCollection = 'reviews';
 
 // increase or decrease booked parcel count and total spent by $inc
 const updateBookedParcelCount = async (email, count, totalSpent, operation) => {
@@ -310,6 +311,26 @@ app.get('/bookedParcel/admin/all', verifyToken, async (req, res) => {
 app.get('/bookedParcel/deliveryMan/:id', verifyToken, async (req, res) => {
   const db = await connectDB(bookedParcelCollection);
   const query = { deliveryMenID: req.params.id };
+  const result = await db.find(query).toArray();
+  res.send(result);
+});
+
+// Review routes
+// Add review
+app.post('/review/add', verifyToken, async (req, res) => {
+  const db = await connectDB(reviewCollection);
+  const review = req.body;
+  const result = await db.insertOne({
+    ...review,
+    createdAt: new Date(),
+  });
+  res.send(result);
+});
+
+// Get all reviews by deliveryManId
+app.get('/reviews/deliveryMan/:id', verifyToken, async (req, res) => {
+  const db = await connectDB(reviewCollection);
+  const query = { deliveryManId: req.params.id };
   const result = await db.find(query).toArray();
   res.send(result);
 });
