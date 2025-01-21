@@ -378,6 +378,37 @@ app.post('/review/add', verifyToken, async (req, res) => {
     ...review,
     createdAt: new Date(),
   });
+  // update deliveryMan average review
+  const deliveryManID = review.deliveryManId;
+  const userDB = await connectDB(userCollection);
+  const pipeline = [
+    {
+      $match: {
+        deliveryManId: deliveryManID,
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        averageRating: {
+          $avg: '$rating',
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        averageRating: {
+          $round: ['$averageRating', 1],
+        },
+      },
+    },
+  ];
+  const averageRating = await db.aggregate(pipeline).toArray();
+  await userDB.updateOne(
+    { _id: new ObjectId(deliveryManID) },
+    { $set: { averageReview: averageRating[0].averageRating } }
+  );
   res.send(result);
 });
 
