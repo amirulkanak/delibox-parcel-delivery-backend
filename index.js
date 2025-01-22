@@ -120,7 +120,7 @@ app.patch('/users/update/photo/:email', verifyToken, async (req, res) => {
 });
 
 // get user role by email
-app.get('/users/role/:email', verifyToken, async (req, res) => {
+app.get('/users/role/:email', async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
   const db = await connectDB(userCollection);
