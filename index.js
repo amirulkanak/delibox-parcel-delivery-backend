@@ -1,10 +1,10 @@
-import dotenv from 'dotenv';
-import express, { query } from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import express from 'express';
 import jwt from 'jsonwebtoken';
-import morgan from 'morgan';
-import connectDB from './config/database.js';
 import { ObjectId } from 'mongodb';
+// import morgan from 'morgan';
+import connectDB from './config/database.js';
 
 // Load environment variables
 dotenv.config();
@@ -17,7 +17,7 @@ const allowedOrigins = process.env.FRONTEND_URLS.split(',');
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
-app.use(morgan('dev'));
+// app.use(morgan('dev'));
 
 // Collections
 const userCollection = 'users';
@@ -121,15 +121,10 @@ app.patch('/users/update/photo/:email', verifyToken, async (req, res) => {
 
 // get user role by email
 app.get('/users/role/:email', verifyToken, async (req, res) => {
-  const tokenEmail = req.decoded.email;
-  if (tokenEmail !== req.params.email) {
-    return res.status(401).send('Unauthorized');
-  }
   const email = req.params.email;
   const query = { email: email };
   const db = await connectDB(userCollection);
   const user = await db.findOne(query);
-  if (!user) return res.status(404).send('User not found');
   res.send({ userId: user._id, role: user.role });
 });
 
